@@ -1,0 +1,23 @@
+{
+  "n_passages": 574197,
+  "n_articles": 23733,
+  "n_articles_total": 29756,
+  "coverage_pct": 79.8,
+  "embedding_dim": 768,
+  "index_type": "IndexFlatIP",
+  "normalised": true,
+  "encoder": "facebook/dpr-ctx_encoder-single-nq-base",
+  "q_encoder": "facebook/dpr-question_encoder-single-nq-base",
+  "chunk_size_words": 100,
+  "wikipedia_dump": "wikimedia/wikipedia 20231101.en",
+  "paper_dump": "Wikipedia December 2018",
+  "passages_path": "/home/jovyan/lectures/raq-reproducibility-challenge/fever/data/fever_passages.jsonl",
+  "embeddings_path": "/home/jovyan/lectures/raq-reproducibility-challenge/fever/data/fever_embeddings.npy",
+  "faiss_index_path": "/home/jovyan/lectures/raq-reproducibility-challenge/fever/data/fever_faiss.index",
+  "sanity_check": {
+    "obama_top1_correct": true,
+    "ronaldo_top1_correct": true,
+    "eiffel_top1_correct": false,
+    "eiffel_note": "REFUTES claim \u2014 retriever fetches Berlin passages because claim mentions Berlin prominently. Known DPR behaviour on false claims."
+  }
+}
