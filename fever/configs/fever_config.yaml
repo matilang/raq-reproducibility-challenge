@@ -1,0 +1,30 @@
+# fever_config.yaml
+
+model:
+  checkpoint: "facebook/rag-token-nq"
+  n_docs: 5
+
+data:
+  # Phase 1 — debug run (comment out for full training)
+  train_size: 500
+  val_size: 200
+  test_size: 200
+
+  # Phase 2 — loss and metrics check run
+  # train_size: 5000
+  # val_size: 2000
+  # test_size: 2000
+
+  # Phase 3 — full run
+  # train_size: null
+  # val_size: null
+  # test_size: null
+
+  seed: 42
+
+training:
+  batch_size: 4
+  learning_rate: 3.0e-5
+  epochs: 3
+  warmup_steps: 100
+  gradient_accumulation_steps: 4
