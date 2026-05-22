@@ -1,0 +1,44 @@
+{
+  "dataset": "copenlu/fever_gold_evidence",
+  "splits": {
+    "train": 228277,
+    "validation": 15935,
+    "test": 16039
+  },
+  "label_distribution_train": {
+    "SUPPORTS": {
+      "count": 114801,
+      "percentage": 50.3
+    },
+    "REFUTES": {
+      "count": 47096,
+      "percentage": 20.6
+    },
+    "NOT ENOUGH INFO": {
+      "count": 66380,
+      "percentage": 29.1
+    }
+  },
+  "claim_length_stats": {
+    "mean": 7.7,
+    "median": 7.0,
+    "min": 2,
+    "max": 65,
+    "std": 3.0
+  },
+  "label_mapping_3way": {
+    "SUPPORTS": "0",
+    "REFUTES": "1",
+    "NOT ENOUGH INFO": "2"
+  },
+  "label_mapping_2way": {
+    "SUPPORTS": "0",
+    "REFUTES": "1"
+  },
+  "notes": [
+    "Dataset has 228K train examples vs paper's 145K",
+    "Difference due to multiple evidence annotations per claim",
+    "Class imbalance: SUPPORTS 50.3%, NEI 29.1%, REFUTES 20.6%",
+    "Evidence structure: [article_title, sentence_id, sentence_text]"
+  ]
+}
