@@ -50,3 +50,4 @@ fever/
 ## Quick start
 
 > Work in progress — full instructions will be added after fine-tuning is complete.
+# cluster setup confirmed
