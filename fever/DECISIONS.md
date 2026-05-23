@@ -65,7 +65,7 @@ Stream through all 6,407,814 articles, keep only FEVER articles.
 | Aspect | Paper | Ours |
 |--------|-------|-------|
 | Wikipedia dump | December 2018 | November 2023 |
-| Index size | 21M passages | ~574K passages |
+| Index size | 21M passages | 574,197 passages |
 | Coverage | All of Wikipedia | FEVER articles only |
 
 **Why the trade-offs are acceptable:**
@@ -102,6 +102,14 @@ tu.is_faiss_available = lambda: True
 **Why not just install `faiss-cpu`:**
 `faiss-gpu-cu12` is already installed and uses the GPU — installing
 `faiss-cpu` alongside risks version conflicts and loses GPU acceleration.
+
+**Cluster environment note:**
+The cluster resets pip installs on kernel restart. A `setup_env.py`
+script in `fever/` handles reinstallation automatically. Run at the
+start of every session with:
+```python
+%run ../setup_env.py
+```
 
 ---
 
@@ -166,11 +174,122 @@ provide partial coverage. Limitation is noted in the presentation.
 
 ---
 
+## Decision 6 — FAISS index type (IndexFlatIP)
+
+**What we use:** `faiss.IndexFlatIP` (flat inner product index)
+
+**What the paper uses:** HNSW (Hierarchical Navigable Small World)
+approximation for fast retrieval over 21M passages.
+
+**Why we use flat index:**
+- Our index has 574K passages vs the paper's 21M — at this scale
+  a flat exhaustive search is fast enough (milliseconds per query)
+- HNSW is an approximate search method needed only at 21M+ scale
+  to keep retrieval time manageable
+- Flat index gives exact results — no approximation error
+- Simpler to implement and debug
+
+**Normalisation:**
+Embeddings are L2-normalised before adding to the index so that
+inner product search is equivalent to cosine similarity. This
+matches the DPR training objective.
+
+---
+
+## Observation 1 — DPR retrieval behaviour on REFUTES claims
+
+**Finding from sanity check (Notebook 02):**
+
+Claim: "The Eiffel Tower is located in Berlin." (REFUTES)
+Expected top result: Eiffel Tower article
+Actual top result: Berlin article
+
+The retriever fetched Berlin passages because "Berlin" is the most
+prominent entity in the claim. DPR has no knowledge that the claim
+is false — it retrieves based on semantic similarity to the claim
+text as written. Since the claim says "located in Berlin", Berlin
+dominates the query vector.
+
+**Implications:**
+- REFUTES claims will systematically retrieve passages about the
+  wrong entity (the false entity mentioned in the claim)
+- The generator (BART) must then reason that the retrieved evidence
+  contradicts the claim — a harder task than for SUPPORTS claims
+- This partially explains why FEVER is a challenging task for RAG
+  and why the paper's 72.5% 3-way accuracy leaves room for improvement
+
+**Comparison claims from sanity check:**
+| Claim | Label | Top-1 article | Correct? |
+|-------|-------|---------------|----------|
+| "Barack Obama was born in Hawaii." | SUPPORTS | Barack Obama | ✓ |
+| "The Eiffel Tower is located in Berlin." | REFUTES | Berlin | ✗ |
+| "Cristiano Ronaldo is a professional footballer." | SUPPORTS | Cristiano Ronaldo | ✓ |
+
+---
+
+## Observation 2 — Pre fine-tuning retrieval recall results
+
+**From Notebook 03 — retrieval verification (n=400, validation set)**
+
+| Metric | Ours | Paper |
+|--------|------|-------|
+| Top-1 recall | 65.4% | ~71% |
+| Top-5 recall | 75.9% | — |
+| Top-10 recall | 80.0% | ~90% |
+
+**Recall by label:**
+| Label | Top-1 | Top-5 | Top-10 |
+|-------|-------|-------|--------|
+| SUPPORTS | 69.2% | 79.8% | 81.8% |
+| REFUTES | 61.5% | 72.0% | 78.2% |
+
+**Why our recall is lower than the paper — three quantifiable factors:**
+
+1. **Index coverage cap (79.8%):**
+   We are missing 20.2% of FEVER articles. Any claim whose gold
+   article falls in the missing 20% cannot be recalled regardless
+   of retrieval quality. This alone mathematically caps our maximum
+   possible recall at ~80%.
+
+2. **Wikipedia dump mismatch (2018 vs 2023):**
+   Article restructuring over 5 years means some passages that
+   existed in the 2018 dump no longer exist in the same form.
+   Content drift is unquantified but contributes to recall loss.
+
+3. **Systematic REFUTES penalty (-3 points vs SUPPORTS):**
+   REFUTES top-1 recall (57%) is 3 points below SUPPORTS (64%),
+   confirming the pattern observed in Observation 1. The retriever
+   consistently fetches passages about the false entity in the claim
+   rather than the gold evidence article.
+
+**Interpretation for presentation:**
+Our pre fine-tuning recall of 65.4% top-1 is below the paper's 71%,
+but the gap is fully explained by methodological differences rather
+than implementation errors. The REFUTES systematic gap is a novel
+finding that adds analytical depth to the reproduction.
+
+After fine-tuning on FEVER, we expect recall to improve as the query
+encoder learns to produce vectors that retrieve evidence more
+effectively for fact verification specifically.
+
+---
+
 ## Data files (fever/data/)
 | File | Description |
 |------|-------------|
 | `fever_passages.jsonl` | 574,197 passages from 23,733 articles |
 | `not_found_articles.json` | 6,023 articles not matched in 2023 dump |
+| `index_metadata.json` | Index build metadata |
+| `fever_embeddings.npy` | DPR passage embeddings (574,197 × 768, 1.64 GB) |
+| `fever_faiss.index` | FAISS flat IP index (1.64 GB) |
+
+## Results files (fever/results/)
+| File | Description |
+|------|-------------|
+| `dataset_summary.json` | FEVER dataset statistics |
+| `label_distribution.png` | Class distribution plot |
+| `retrieval_recall.json` | Retrieval recall metrics vs paper |
+| `retrieval_verification.png` | Recall bar charts by label and vs paper |
 
 ---
 

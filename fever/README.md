@@ -35,9 +35,10 @@ Given a claim (e.g. *"Barack Obama was born in Hawaii"*), classify it as one of:
 fever/
   notebooks/
     01_data_exploration.ipynb
-    02_retrieval_verification.ipynb
-    03_finetuning.ipynb
-    04_evaluation.ipynb
+    02_creation_of_passages.ipynb
+    03_retrieval_verification.ipynb
+    04_finetuning.ipynb
+    05_evaluation.ipynb
   src/
     data.py        # dataset loading and label mapping
     train.py       # fine-tuning loop
