@@ -33,6 +33,11 @@ Given a claim (e.g. *"Barack Obama was born in Hawaii"*), classify it as one of:
 
 ```
 fever/
+  configs/
+    fever_config.yaml
+  data/
+    fever_train.jsonl
+    fever_dev.jsonl
   notebooks/
     01_data_exploration.ipynb
     02_creation_of_passages.ipynb
@@ -43,9 +48,14 @@ fever/
     data.py        # dataset loading and label mapping
     train.py       # fine-tuning loop
     evaluate.py    # metric computation
+    model.py       # model loading, retrieval and forward pass
   configs/
     fever_config.yaml
   results/
+    dataset_summary.json
+    label_distribution.png
+    retrieval_recall.json
+    retrieval_verification.png
 ```
 
 ## Quick start
