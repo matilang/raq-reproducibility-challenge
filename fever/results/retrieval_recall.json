@@ -1,0 +1,34 @@
+{
+  "n_examples": 800,
+  "n_supports": 400,
+  "n_refutes": 400,
+  "overall": {
+    "top1_recall": 0.654,
+    "top5_recall": 0.759,
+    "top10_recall": 0.8
+  },
+  "by_label": {
+    "SUPPORTS": {
+      "top1": 0.693,
+      "top5": 0.797,
+      "top10": 0.818
+    },
+    "REFUTES": {
+      "top1": 0.615,
+      "top5": 0.72,
+      "top10": 0.782
+    }
+  },
+  "paper": {
+    "top1_recall": 0.71,
+    "top10_recall": 0.9,
+    "note": "Paper reports on full Wikipedia index, 21M passages"
+  },
+  "our_index": {
+    "n_passages": 574197,
+    "n_articles": 23733,
+    "coverage": 0.798,
+    "dump": "wikimedia/wikipedia 20231101.en"
+  },
+  "note": "Pre fine-tuning recall on FEVER validation set. REFUTES recall expected to be lower \u2014 retriever fetches passages about entities mentioned in the false claim rather than the gold evidence article."
+}
