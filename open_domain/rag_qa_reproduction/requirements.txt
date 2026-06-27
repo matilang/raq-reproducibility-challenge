@@ -1,0 +1,11 @@
+torch
+transformers
+datasets
+numpy
+tqdm
+faiss-cpu
+pandas
+scikit-learn
+sentencepiece
+protobuf
+evaluate
