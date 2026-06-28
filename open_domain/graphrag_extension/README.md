@@ -53,26 +53,23 @@ Main idea:
 3. Retrieve relations connected to the matched entities.
 4. Use the retrieved entity-relation evidence as additional context for question answering.
 
-This stage is an intermediate experiment because it uses the extracted entity-relation structure without requiring a full NetworkX graph implementation.
+This stage is an intermediate experiment because it uses the extracted entity-relation structure without requiring a fully explicit graph implementation.
 
-## Experiment 2 Results: Implicit Entity-Relation Retrieval
+### Experiment 2 Results
 
-Experiment 2 evaluated retrieval directly from the LLM-extracted entity-relation JSON outputs before constructing the final explicit graph.
+Experiment 2 evaluated retrieval directly from the LLM-extracted entity-relation JSON outputs. This was the most promising Graph-RAG result because the hybrid setup improved over the DPR baseline on both Exact Match and F1.
 
-This experiment was the most promising Graph-RAG result because the hybrid setup improved over the DPR baseline on both Exact Match and F1.
+Scores are reported as percentages.
 
-| Setting                 | Examples | Top-k | Max graph relations | Baseline EM | Graph-only EM | Hybrid EM | Baseline F1 | Graph-only F1 | Hybrid F1 |
-| ----------------------- | -------: | ----: | ------------------: | ----------: | ------------: | --------: | ----------: | ------------: | --------: |
-| JSON relation retrieval |    3,610 |     5 |                   3 |        5.82 |          5.10 |      6.23 |       10.58 |          9.35 |     11.07 |
-| JSON relation retrieval |    3,610 |     5 |                   5 |        5.82 |          4.40 |      6.51 |       10.58 |          8.60 |     11.44 |
-| JSON relation retrieval |    3,610 |     5 |                  10 |        5.82 |          4.24 |      6.26 |       10.58 |          7.99 |     10.84 |
+| Setting                 | Examples | Top-k | Max graph relations | Baseline EM | Relation-only EM | Hybrid EM | Baseline F1 | Relation-only F1 | Hybrid F1 |
+| ----------------------- | -------: | ----: | ------------------: | ----------: | ---------------: | --------: | ----------: | ---------------: | --------: |
+| JSON relation retrieval |    3,610 |     5 |                   3 |        5.82 |             5.10 |      6.23 |       10.58 |             9.35 |     11.07 |
+| JSON relation retrieval |    3,610 |     5 |                   5 |        5.82 |             4.40 |      6.51 |       10.58 |             8.60 |     11.44 |
+| JSON relation retrieval |    3,610 |     5 |                  10 |        5.82 |             4.24 |      6.26 |       10.58 |             7.99 |     10.84 |
 
 Graph evidence was available for 100% of the evaluated examples.
 
-The best result was obtained with `max_graph_relations=5`, where the hybrid setup improved Exact Match from 5.82 to 6.51 and F1 from 10.58 to 11.44.
-
-This suggests that the extracted entity-relation JSON contains useful structured evidence, but that it is most effective when combined with DPR retrieval rather than used alone.
-
+The best result was obtained with `max_graph_relations=5`, where the hybrid setup improved Exact Match from 5.82 to 6.51 and F1 from 10.58 to 11.44. This suggests that the extracted entity-relation JSON contains useful structured evidence, but that it is most effective when combined with DPR retrieval rather than used alone.
 
 ## Experiment 3: Explicit Hybrid Graph-RAG Retrieval
 
@@ -89,10 +86,6 @@ Main steps:
 
 The hybrid setup is the main extension because it does not replace DPR. Instead, it adds graph evidence as a complementary retrieval signal.
 
-## Experimental Results
-
-The final explicit graph experiment was evaluated on NQ-Open questions using DPR retrieval, graph-only evidence, and the hybrid DPR + graph evidence setup.
-
 ### Graph Construction Output
 
 The explicit graph built from the one-shard extraction contained:
@@ -103,7 +96,11 @@ The explicit graph built from the one-shard extraction contained:
 | Graph edges             | 151,256 |
 | Chunks with graph edges |  17,221 |
 
-### Selected Evaluation Results
+### Experiment 3 Results
+
+The final explicit graph experiment was evaluated on NQ-Open questions using DPR retrieval, graph-only evidence, and hybrid DPR + graph evidence.
+
+Scores are reported as percentages.
 
 | Setting                  | Examples | Top-k | Max graph relations | Baseline EM | Graph-only EM | Hybrid EM | Baseline F1 | Graph-only F1 | Hybrid F1 |
 | ------------------------ | -------: | ----: | ------------------: | ----------: | ------------: | --------: | ----------: | ------------: | --------: |
@@ -114,22 +111,6 @@ The explicit graph built from the one-shard extraction contained:
 | Full NQ evaluation split |    3,610 |     5 |                   3 |        5.82 |          4.68 |      6.26 |       10.58 |          8.35 |     10.94 |
 
 Graph evidence was available for almost all evaluated examples, reaching 100% in the smaller runs and approximately 99.97% on the full NQ evaluation split.
-
-### Result Interpretation
-
-The graph-only setup did not consistently outperform the DPR baseline. This is expected because the graph was built from only one DPR shard, so graph coverage is limited and question-to-entity matching is still relatively simple.
-
-However, the hybrid setup achieved the best Exact Match and F1 in the full evaluation:
-
-* Baseline DPR EM: 5.82
-* Graph-only EM: 4.68
-* Hybrid DPR + graph EM: 6.26
-* Baseline DPR F1: 10.58
-* Graph-only F1: 8.35
-* Hybrid DPR + graph F1: 10.94
-
-This suggests that the graph evidence is most useful as a complementary retrieval signal rather than as a standalone replacement for DPR retrieval. The result supports the main idea of the extension: combining dense passage retrieval with structured entity-relation evidence can improve the RAG context in a controlled one-shard setting.
-
 
 ## Method Summary
 
@@ -153,11 +134,23 @@ Hybrid DPR + graph evidence context
 Answer generation / evaluation
 ```
 
-## Interpretation
+## Result Interpretation
 
-Dense DPR retrieval is useful for retrieving semantically relevant passages. Graph evidence can add explicit entity-relation connections that may not be easy to recover from passage similarity alone.
+The graph-only setup did not consistently outperform the DPR baseline. This is expected because the graph was built from only one DPR shard, so graph coverage is limited and question-to-entity matching is still relatively simple.
 
-Therefore, the final experiment should be interpreted as a Hybrid Graph-RAG proof of concept: DPR provides the vector retrieval component, while the extracted entity-relation graph provides structured retrieval evidence.
+The strongest result came from Experiment 2, where the hybrid setup combined DPR evidence with LLM-extracted relation evidence. In the best Experiment 2 run, the hybrid setup improved:
+
+* Exact Match: 5.82 → 6.51
+* F1: 10.58 → 11.44
+
+The final explicit graph experiment also showed a smaller hybrid improvement on the full NQ evaluation split:
+
+* Exact Match: 5.82 → 6.26
+* F1: 10.58 → 10.94
+
+Overall, the results suggest that graph evidence is most useful as a complementary retrieval signal rather than as a standalone replacement for DPR retrieval. Dense DPR retrieval provides semantically relevant passages, while graph evidence adds explicit entity-relation connections that may not be easy to recover from passage similarity alone.
+
+Therefore, the extension should be interpreted as a Hybrid Graph-RAG proof of concept: DPR provides the vector retrieval component, while the extracted entity-relation graph provides structured retrieval evidence.
 
 ## Limitations
 
@@ -165,3 +158,4 @@ Therefore, the final experiment should be interpreted as a Hybrid Graph-RAG proo
 * Entity and relation quality depends on the LLM extraction step.
 * Question matching is based on extracted entities and keyword overlap, so it is simpler than a fully trained graph retriever.
 * The experiment is a proof of concept rather than a production-scale GraphRAG system.
+
