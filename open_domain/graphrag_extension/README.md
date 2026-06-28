@@ -55,6 +55,25 @@ Main idea:
 
 This stage is an intermediate experiment because it uses the extracted entity-relation structure without requiring a full NetworkX graph implementation.
 
+## Experiment 2 Results: Implicit Entity-Relation Retrieval
+
+Experiment 2 evaluated retrieval directly from the LLM-extracted entity-relation JSON outputs before constructing the final explicit graph.
+
+This experiment was the most promising Graph-RAG result because the hybrid setup improved over the DPR baseline on both Exact Match and F1.
+
+| Setting                 | Examples | Top-k | Max graph relations | Baseline EM | Graph-only EM | Hybrid EM | Baseline F1 | Graph-only F1 | Hybrid F1 |
+| ----------------------- | -------: | ----: | ------------------: | ----------: | ------------: | --------: | ----------: | ------------: | --------: |
+| JSON relation retrieval |    3,610 |     5 |                   3 |        5.82 |          5.10 |      6.23 |       10.58 |          9.35 |     11.07 |
+| JSON relation retrieval |    3,610 |     5 |                   5 |        5.82 |          4.40 |      6.51 |       10.58 |          8.60 |     11.44 |
+| JSON relation retrieval |    3,610 |     5 |                  10 |        5.82 |          4.24 |      6.26 |       10.58 |          7.99 |     10.84 |
+
+Graph evidence was available for 100% of the evaluated examples.
+
+The best result was obtained with `max_graph_relations=5`, where the hybrid setup improved Exact Match from 5.82 to 6.51 and F1 from 10.58 to 11.44.
+
+This suggests that the extracted entity-relation JSON contains useful structured evidence, but that it is most effective when combined with DPR retrieval rather than used alone.
+
+
 ## Experiment 3: Explicit Hybrid Graph-RAG Retrieval
 
 The final experiment builds an explicit graph-based retrieval setup and combines it with DPR retrieval.
