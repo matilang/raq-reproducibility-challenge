@@ -2,7 +2,7 @@
 
 This folder contains the Graph-RAG extension for the open-domain QA reproduction.
 
-The extension builds on the reproduced RAG question answering pipeline and explores whether graph-structured evidence can complement DPR-based dense passage retrieval. The experiment is implemented as a one-shard proof of concept using one Wikipedia DPR shard from the full DPR corpus.
+The extension builds on the reproduced RAG question answering pipeline and explores whether graph-structured evidence can complement DPR-based dense passage retrieval. It is implemented as a controlled one-shard proof of concept using one Wikipedia DPR shard from the full DPR corpus.
 
 ## Related Papers
 
@@ -20,7 +20,7 @@ This is not a full-scale GraphRAG implementation over the complete Wikipedia cor
 
 The goal is to test whether LLM-extracted entities and relations can provide useful structured evidence alongside DPR-retrieved passages.
 
-The extension should be interpreted as a proof of concept. It does not rebuild the full 157-shard DPR Wikipedia index.
+The extension should be interpreted as a proof of concept. It does not rebuild the full 157-shard DPR Wikipedia index, and it is not intended to be a production-scale GraphRAG system.
 
 ## Notebooks
 
@@ -29,40 +29,35 @@ The extension should be interpreted as a proof of concept. It does not rebuild t
 | `LLM_graph_extraction_layer.ipynb`     | Builds the extraction layer by loading one DPR shard, chunking article text, and using an LLM to extract entities and relations.                                      |
 | `final_explicit_graphrag_hybrid.ipynb` | Builds the one-shard DPR + T5 baseline, evaluates entity-relation JSON retrieval, constructs the explicit graph, and evaluates hybrid DPR + graph evidence retrieval. |
 
-## Method Overview
+## Chronological Pipeline
 
-The extension has three main parts:
+The extension is organized in the following order:
 
 1. **LLM graph extraction layer**
-   This step creates the structured entity-relation evidence source from one DPR Wikipedia shard.
+   One DPR Wikipedia shard is loaded, grouped by article title, chunked, and processed with an LLM to extract entities and relations.
 
-2. **Entity-relation retrieval from extracted JSON**
-   This method retrieves structured relation evidence directly from the extracted JSON outputs.
+2. **Controlled DPR + T5 baseline**
+   A local one-shard DPR retrieval setup is built. Passage embeddings are created and indexed locally, retrieved passages are passed to a T5 generator, and this DPR + T5 pipeline is used as the baseline.
 
-3. **Explicit Hybrid Graph-RAG retrieval**
-   This method builds an explicit graph from the extracted entities and relations, then retrieves graph evidence from connected nodes and edges.
+3. **Entity-relation retrieval from extracted JSON**
+   The extracted JSON relations are used directly as structured evidence. This tests whether the LLM-extracted entities and relations are useful before building an explicit graph.
 
-The LLM extraction layer is not treated as a standalone QA experiment. Instead, it is the evidence construction step used by both retrieval evaluations.
+4. **Explicit Hybrid Graph-RAG retrieval**
+   An explicit graph is constructed from the extracted entities and relations. Graph evidence is retrieved from connected nodes and edges, then combined with DPR-retrieved passages in a hybrid setup.
 
-Baseline Definition
-
-For the graph-based evaluations, the baseline is a controlled one-shard DPR + T5 pipeline. Passage embeddings are created from one Wikipedia DPR shard, indexed locally, and retrieved using DPR-based dense retrieval. The retrieved passages are then passed to a T5 generator to produce answers.
-
-This baseline uses only DPR-retrieved text evidence. It does not use the extracted JSON relations or the explicit graph evidence.
-
-The same T5 generator is used across the baseline, relation-based, graph-based, and hybrid settings. This keeps the comparison focused on the retrieved evidence rather than changing the answer generation model.
+The LLM extraction layer is not treated as a standalone QA experiment. It is the evidence construction step used by both graph-based retrieval methods.
 
 ## Retrieval and Generation Setup
 
 The second notebook implements the retrieval and generation pipeline used for the graph-based evaluations.
 
-Instead of relying only on a ready-made RAG checkpoint, the notebook builds a controlled one-shard QA setup:
+The baseline is a controlled one-shard DPR + T5 pipeline:
 
 1. A DPR-based dense retrieval baseline is built over one Wikipedia DPR shard.
 2. Passage embeddings are created and indexed locally for retrieval.
 3. Retrieved passages are passed to a T5 generator to produce answers.
 4. This DPR + T5 setup is used as the baseline.
-5. The same generator is then evaluated with additional structured evidence from the extracted entity-relation JSON.
+5. The same T5 generator is then evaluated with additional structured evidence from the extracted entity-relation JSON.
 6. Finally, an explicit graph is built from the extracted entities and relations, and graph evidence is combined with DPR evidence in a hybrid setup.
 
 This makes the comparison controlled: the generator remains the same, while the retrieved evidence changes across the DPR-only, relation-based, graph-based, and hybrid settings.
@@ -76,31 +71,9 @@ The evaluated evidence settings are:
 | Explicit graph retrieval       | Builds graph nodes and edges from extracted entities and relations, then retrieves connected graph evidence. |
 | Hybrid retrieval               | Combines DPR-retrieved passages with structured relation or graph evidence before answer generation.         |
 
-## Evaluation Results Summary
-
-The extension evaluates two graph-based retrieval methods built from the same LLM-extracted entity-relation evidence:
-
-1. **Entity-relation retrieval from extracted JSON**
-2. **Explicit Hybrid Graph-RAG retrieval**
-
-Both methods were evaluated on NQ-Open using the one-shard DPR + T5 setup as the baseline. Scores are reported as percentages.
-
-### Best Result from Each Method
-
-| Method                         | Examples | Top-k | Max graph relations | Baseline EM | Structured-only EM | Hybrid EM | Baseline F1 | Structured-only F1 | Hybrid F1 |
-| ------------------------------ | -------: | ----: | ------------------: | ----------: | -----------------: | --------: | ----------: | -----------------: | --------: |
-| Entity-relation JSON retrieval |    3,610 |     5 |                   5 |        5.82 |               4.40 |      6.51 |       10.58 |               8.60 |     11.44 |
-| Explicit graph retrieval       |    3,610 |     5 |                   3 |        5.82 |               4.68 |      6.26 |       10.58 |               8.35 |     10.94 |
-
-The strongest result came from the entity-relation JSON retrieval method. Its hybrid setup improved Exact Match from 5.82 to 6.51 and F1 from 10.58 to 11.44.
-
-The explicit graph retrieval method also improved over the DPR + T5 baseline in the hybrid setting, reaching 6.26 EM and 10.94 F1 on the full NQ evaluation split.
-
-Overall, both methods support the same conclusion: graph-structured evidence is most useful when combined with DPR retrieval rather than used as a standalone replacement.
-
 ## LLM Graph Extraction Layer
 
-The first part of the extension constructs the graph evidence source.
+The first part of the extension constructs the structured graph evidence source.
 
 Main steps:
 
@@ -109,9 +82,9 @@ Main steps:
 3. Chunk article text into manageable context windows.
 4. Use an OpenAI mini model through OpenRouter with `temperature=0` to extract entities and relations from each chunk.
 5. Save the extracted entity-relation JSON outputs.
-6. Use the extracted entities and relations as the basis for graph retrieval.
+6. Use the extracted entities and relations as the basis for later graph-based retrieval.
 
-This layer creates the structured knowledge source used by the later graph-based retrieval evaluations.
+This layer creates the structured knowledge source used by the entity-relation JSON retrieval method and the explicit graph retrieval method.
 
 ### LLM Extraction Reproducibility
 
@@ -156,9 +129,25 @@ The extraction results show that the LLM extraction layer was reasonably reliabl
 
 This supports the design of the extension: the graph retrieval layer depends on automatically extracted entities and relations, so evaluating extraction quality helps justify using the extracted JSON outputs as graph evidence.
 
+## Controlled DPR + T5 Baseline
+
+Before adding graph evidence, the second notebook builds a local DPR + T5 baseline over one Wikipedia DPR shard.
+
+This baseline has two components:
+
+1. **DPR-based retrieval**
+   Passage embeddings are created from the one-shard Wikipedia corpus and indexed locally. Questions are embedded and matched against the local passage index to retrieve relevant text passages.
+
+2. **T5 answer generation**
+   The retrieved passages are passed to a T5 generator, which produces the final answer.
+
+This baseline uses only DPR-retrieved text evidence. It does not use the extracted JSON relations or the explicit graph evidence.
+
+The same T5 generator is used across the baseline, relation-based, graph-based, and hybrid settings. This keeps the comparison focused on the retrieved evidence rather than changing the answer generation model.
+
 ## Entity-Relation Retrieval from Extracted JSON
 
-This retrieval evaluation tests whether the extracted JSON evidence can be used directly for retrieval before building a fully explicit graph.
+This retrieval method tests whether the extracted JSON evidence can be used directly before building a fully explicit graph.
 
 Main idea:
 
@@ -167,6 +156,7 @@ Main idea:
 3. Retrieve relations connected to the matched entities.
 4. Use the retrieved entity-relation evidence as additional context for question answering.
 5. Generate answers using the same T5 generator used in the DPR + T5 baseline.
+6. Compare relation-only and hybrid DPR + relation evidence against the DPR + T5 baseline.
 
 This method uses the extracted entity-relation structure directly, without requiring a fully explicit graph implementation.
 
@@ -188,7 +178,7 @@ The best result was obtained with `max_graph_relations=5`, where the hybrid setu
 
 ## Explicit Hybrid Graph-RAG Retrieval
 
-The final retrieval evaluation builds an explicit graph-based retrieval setup and combines it with DPR retrieval.
+The final retrieval method builds an explicit graph-based retrieval setup and combines it with DPR retrieval.
 
 Main steps:
 
@@ -227,6 +217,28 @@ Scores are reported as percentages.
 | Full NQ evaluation split |    3,610 |     5 |                   3 |        5.82 |          4.68 |      6.26 |       10.58 |          8.35 |     10.94 |
 
 Graph evidence was available for almost all evaluated examples, reaching 100% in the smaller runs and approximately 99.97% on the full NQ evaluation split.
+
+## Evaluation Results Summary
+
+The extension evaluates two graph-based retrieval methods built from the same LLM-extracted entity-relation evidence:
+
+1. **Entity-relation retrieval from extracted JSON**
+2. **Explicit Hybrid Graph-RAG retrieval**
+
+Both methods were evaluated on NQ-Open using the one-shard DPR + T5 setup as the baseline. Scores are reported as percentages.
+
+### Best Result from Each Method
+
+| Method                         | Examples | Top-k | Max graph relations | Baseline EM | Structured-only EM | Hybrid EM | Baseline F1 | Structured-only F1 | Hybrid F1 |
+| ------------------------------ | -------: | ----: | ------------------: | ----------: | -----------------: | --------: | ----------: | -----------------: | --------: |
+| Entity-relation JSON retrieval |    3,610 |     5 |                   5 |        5.82 |               4.40 |      6.51 |       10.58 |               8.60 |     11.44 |
+| Explicit graph retrieval       |    3,610 |     5 |                   3 |        5.82 |               4.68 |      6.26 |       10.58 |               8.35 |     10.94 |
+
+The strongest result came from the entity-relation JSON retrieval method. Its hybrid setup improved Exact Match from 5.82 to 6.51 and F1 from 10.58 to 11.44.
+
+The explicit graph retrieval method also improved over the DPR + T5 baseline in the hybrid setting, reaching 6.26 EM and 10.94 F1 on the full NQ evaluation split.
+
+Overall, both methods support the same conclusion: graph-structured evidence is most useful when combined with DPR retrieval rather than used as a standalone replacement.
 
 ## Pipeline Summary
 
@@ -281,3 +293,4 @@ Therefore, the extension should be interpreted as a Hybrid Graph-RAG proof of co
 * Question matching is based on extracted entities and keyword overlap, so it is simpler than a fully trained graph retriever.
 * The DPR + T5 pipeline is a controlled one-shard baseline, not a full reproduction of the original large-scale RAG retrieval setup.
 * The experiment is a proof of concept rather than a production-scale GraphRAG system.
+
