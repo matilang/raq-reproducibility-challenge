@@ -42,6 +42,23 @@ Main steps:
 
 This experiment creates the structured knowledge layer used by the later graph-based retrieval experiments.
 
+### Extraction Quality Evaluation
+
+To validate the LLM extraction layer, a small manual evaluation was performed on 20 sampled chunks. The evaluation compared extracted entities and relations against manually checked expected outputs.
+
+| Metric             | Score |
+| ------------------ | ----: |
+| Entity precision   | 0.836 |
+| Entity recall      | 0.780 |
+| Entity F1          | 0.806 |
+| Relation precision | 0.690 |
+| Relation recall    | 0.660 |
+| Relation F1        | 0.675 |
+
+The extraction results show that the LLM extraction layer was reasonably reliable for entity extraction, with entity F1 around 0.81. Relation extraction was weaker than entity extraction, but still usable as a structured evidence source for the later retrieval experiments.
+
+This supports the design of the extension: the graph retrieval layer depends on automatically extracted entities and relations, so evaluating extraction quality helps justify using the extracted JSON outputs as graph evidence.
+
 ## Experiment 2: Entity-Relation Retrieval from Extracted JSON
 
 The second experiment tests whether the extracted JSON evidence can be used directly for retrieval before building a fully explicit graph.
@@ -158,4 +175,3 @@ Therefore, the extension should be interpreted as a Hybrid Graph-RAG proof of co
 * Entity and relation quality depends on the LLM extraction step.
 * Question matching is based on extracted entities and keyword overlap, so it is simpler than a fully trained graph retriever.
 * The experiment is a proof of concept rather than a production-scale GraphRAG system.
-
