@@ -70,6 +70,48 @@ Main steps:
 
 The hybrid setup is the main extension because it does not replace DPR. Instead, it adds graph evidence as a complementary retrieval signal.
 
+## Experimental Results
+
+The final explicit graph experiment was evaluated on NQ-Open questions using DPR retrieval, graph-only evidence, and the hybrid DPR + graph evidence setup.
+
+### Graph Construction Output
+
+The explicit graph built from the one-shard extraction contained:
+
+| Component               |   Count |
+| ----------------------- | ------: |
+| Graph nodes             | 117,447 |
+| Graph edges             | 151,256 |
+| Chunks with graph edges |  17,221 |
+
+### Selected Evaluation Results
+
+| Setting                  | Examples | Top-k | Max graph relations | Baseline EM | Graph-only EM | Hybrid EM | Baseline F1 | Graph-only F1 | Hybrid F1 |
+| ------------------------ | -------: | ----: | ------------------: | ----------: | ------------: | --------: | ----------: | ------------: | --------: |
+| Small ablation           |      100 |     5 |                   2 |        4.00 |          4.00 |      6.00 |        8.47 |          9.32 |     10.14 |
+| Small ablation           |      100 |     5 |                   3 |        4.00 |          6.00 |      6.00 |        8.47 |         10.62 |     11.70 |
+| Small ablation           |      100 |     5 |                   5 |        4.00 |          5.00 |      6.00 |        8.47 |          9.52 |     12.62 |
+| Larger sample            |    1,000 |     5 |                   3 |        5.50 |          5.30 |      6.50 |       10.50 |          9.67 |     11.49 |
+| Full NQ evaluation split |    3,610 |     5 |                   3 |        5.82 |          4.68 |      6.26 |       10.58 |          8.35 |     10.94 |
+
+Graph evidence was available for almost all evaluated examples, reaching 100% in the smaller runs and approximately 99.97% on the full NQ evaluation split.
+
+### Result Interpretation
+
+The graph-only setup did not consistently outperform the DPR baseline. This is expected because the graph was built from only one DPR shard, so graph coverage is limited and question-to-entity matching is still relatively simple.
+
+However, the hybrid setup achieved the best Exact Match and F1 in the full evaluation:
+
+* Baseline DPR EM: 5.82
+* Graph-only EM: 4.68
+* Hybrid DPR + graph EM: 6.26
+* Baseline DPR F1: 10.58
+* Graph-only F1: 8.35
+* Hybrid DPR + graph F1: 10.94
+
+This suggests that the graph evidence is most useful as a complementary retrieval signal rather than as a standalone replacement for DPR retrieval. The result supports the main idea of the extension: combining dense passage retrieval with structured entity-relation evidence can improve the RAG context in a controlled one-shard setting.
+
+
 ## Method Summary
 
 The overall Graph-RAG extension follows this pipeline:
