@@ -89,7 +89,6 @@ pip install -r requirements.txt
 | Task | Dataset | Split sizes |
 |------|---------|-------------|
 | Jeopardy (RAG) | `search_qa` (train_test_val) | 80k train / 21.6k val / 43.2k test |
-| FEVER | `fever` (via HuggingFace) | ~145k train / 20k val / 20k test |
 | Knowledge Graph | `facebook/wiki_dpr` (Wikipedia passages) | 21M passages, 768-dim DPR vectors |
 
 ## 1. Regular RAG (Jeopardy)
