@@ -44,6 +44,14 @@ The extension has three main parts:
 
 The LLM extraction layer is not treated as a standalone QA experiment. Instead, it is the evidence construction step used by both retrieval evaluations.
 
+Baseline Definition
+
+For the graph-based evaluations, the baseline is a controlled one-shard DPR + T5 pipeline. Passage embeddings are created from one Wikipedia DPR shard, indexed locally, and retrieved using DPR-based dense retrieval. The retrieved passages are then passed to a T5 generator to produce answers.
+
+This baseline uses only DPR-retrieved text evidence. It does not use the extracted JSON relations or the explicit graph evidence.
+
+The same T5 generator is used across the baseline, relation-based, graph-based, and hybrid settings. This keeps the comparison focused on the retrieved evidence rather than changing the answer generation model.
+
 ## Retrieval and Generation Setup
 
 The second notebook implements the retrieval and generation pipeline used for the graph-based evaluations.
