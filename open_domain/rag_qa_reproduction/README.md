@@ -18,6 +18,19 @@ The experiments use Hugging Face RAG checkpoints with a DPR-based retriever and 
 * `results/reproduction_results.md`
 * `docs/reproduction_protocol.md`
 
+  rag_qa_reproduction/
+├── src/
+│   ├── training/
+│   └── evaluation/
+├── scripts/
+│   └── reproduction/
+├── results/
+│   └── reproduction_results.md
+├── docs/
+│   └── reproduction_protocol.md
+├── README.md
+└── environment.txt
+
 ## Setup
 
 Install the main dependencies:
