@@ -24,8 +24,7 @@ open_domain/
 │
 └── graphrag_extension/
     ├── notebooks/
-    ├── graph_data/
-    ├── results/
+
     └── README.md
 ```
 
