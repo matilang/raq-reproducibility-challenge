@@ -7,9 +7,9 @@ Knowledge-Intensive NLP Tasks* (Lewis et al., 2021).
 
 | Member | Task | Branch |
 |--------|------|--------|
-| Name 2 | Open Domain | open_domain-section |
-| Name 3 | MS-MARCO | ms_marco-section |
-| Name 4 | Jeopardy | jeopardy-section |
+| Name | Open Domain | open_domain-section |
+| Name | MS-MARCO | ms_marco-section |
+| Name | Jeopardy | jeopardy-section |
 | Mateusz Łangowski | FEVER Fact Verification | fever-section |
 
 ## Structure
